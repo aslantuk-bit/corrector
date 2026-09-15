@@ -9,3 +9,4 @@ dependencies = ["PySide6-Essentials==6.11.2"]
 testpaths = ["tests"]
 pythonpath = ["."]
 qt_api = "pyside6"
+markers = ["lt: требует LanguageTool и Java в vendor/ (пропускается, если их нет)"]
