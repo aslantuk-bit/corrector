@@ -46,7 +46,9 @@ class SpellEngine:
         user_dict: UserDictionary,
         other: SpellDictionary | None = None,
         foreign_message: str = "",
+        suggestions: bool = True,
     ) -> None:
+        self.suggestions = suggestions
         self.name = name
         self.dictionary = dictionary
         self.lexicon = lexicon
@@ -76,8 +78,9 @@ class SpellEngine:
                     issues.append(Issue(index, token.start, token.end, Category.STYLE, Level.HINT,
                                         f"{self.name}:foreign", self.name, self.foreign_message))
                 continue
+            variants = self.dictionary.suggest(word) if self.suggestions else []
             issues.append(Issue(index, token.start, token.end, Category.SPELLING, Level.ERROR,
-                                f"{self.name}:unknown", self.name, UNKNOWN_MESSAGE, self.dictionary.suggest(word)))
+                                f"{self.name}:unknown", self.name, UNKNOWN_MESSAGE, variants))
         return issues
 
     def _skip(self, word: str) -> bool:

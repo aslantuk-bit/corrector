@@ -57,13 +57,14 @@ def build_engines(
     lt_home: Path | None = None,
     data_dir: Path | None = None,
     user_dir: Path | None = None,
+    suggestions: bool = True,
 ) -> Engines:
     data = data_dir or paths.data_dir()
     ru_dict = SpellDictionary(data / "ru" / "ru_RU")
     kk_dict = SpellDictionary(data / "kk" / "kk_KZ")
-    ru_spell = SpellEngine("ru_spell", ru_dict, load_lexicon(data / "lexicon_ru_legal.txt"), user_dict)
+    ru_spell = SpellEngine("ru_spell", ru_dict, load_lexicon(data / "lexicon_ru_legal.txt"), user_dict, suggestions=suggestions)
     kk_spell = SpellEngine("kk_spell", kk_dict, load_lexicon(data / "lexicon_kk_legal.txt"), user_dict, other=ru_dict,
-                           foreign_message=FOREIGN_KK)
+                           foreign_message=FOREIGN_KK, suggestions=suggestions)
     engines = Engines(ru=ru_spell, kk=kk_spell, kk_names=kk_spell, ru_spell=ru_spell)
     resources = load_resources(data, user_dir or paths.user_dir())
     engines.rules = RulesEngine(default_rules(resources), resources)
