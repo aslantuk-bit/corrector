@@ -1,0 +1,17 @@
+{
+  "jre-windows-x64": {
+    "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_windows_hotspot_21.0.12.1_1.zip",
+    "sha256": "d35f31e712f0fcf6ac5a093edc90204fbff22f720ba3950bd09d331d5e621636",
+    "size": 48999141,
+    "unpack_root": "jdk-21.0.12.1+1-jre",
+    "note": "Temurin JRE 21.0.12.1+1 для Windows x64, лицензия GPL-2.0 с Classpath Exception"
+  },
+  "jre-mac-aarch64": {
+    "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_aarch64_mac_hotspot_21.0.12.1_1.tar.gz",
+    "sha256": "dec50fc6f9fcd4fe3ae8cabf5a5fa68f6afc48841f7698e468e9aa5d54beed84",
+    "size": 48144965,
+    "unpack_root": "jdk-21.0.12.1+1-jre",
+    "inner": "Contents/Home",
+    "note": "Temurin JRE 21.0.12.1+1 для Mac Apple Silicon, только для разработки и тестов"
+  }
+}
