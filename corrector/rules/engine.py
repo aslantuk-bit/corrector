@@ -30,8 +30,11 @@ class RulesEngine:
 
 
 def default_rules(resources: RuleResources) -> list[Rule]:
-    from tests.corrector.test_rules_engine import HelloRule  # временно, до задачи 3
+    from corrector.rules.alphabets import MixedAlphabetRule, RomanNumeralRule
+    from corrector.rules.typography import TYPOGRAPHY_RULES
 
-    rules: list[Rule] = [HelloRule()]
+    rules: list[Rule] = []
+    rules += TYPOGRAPHY_RULES
+    rules += [MixedAlphabetRule(), RomanNumeralRule()]
     rules += list(resources.user_rules)
     return rules
