@@ -9,6 +9,7 @@ from corrector.core.text import words
 from corrector.core.userdict import UserDictionary
 from corrector.docx_io.model import DocumentModel
 from corrector.engines.factory import Engines
+from corrector.rules import context
 
 
 def check_document(model: DocumentModel, engines: Engines, user_dict: UserDictionary, settings: Settings) -> list[Issue]:
@@ -25,6 +26,9 @@ def check_document(model: DocumentModel, engines: Engines, user_dict: UserDictio
                 issues += engines.kk_names.check_tokens(index, text, tokens)
     if kk:
         issues += engines.kk.check(kk)
+    if engines.rules is not None:
+        ctx = context.build_contexts(model, languages, settings, engines.rule_resources)
+        issues += engines.rules.run(ctx)
     return dedupe(filter_issues(issues, model, user_dict, settings))
 
 

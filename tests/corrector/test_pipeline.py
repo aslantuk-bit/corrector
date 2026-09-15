@@ -81,3 +81,28 @@ def test_forced_language_mode(tmp_path):
     finally:
         engines.close()
     assert fake.seen == [0]
+
+
+def test_rules_run_in_pipeline_and_win_over_lt(tmp_path):
+    path = make_docx(tmp_path / "а.docx", body=["Суд  решил что иск обоснован."])
+    doc = model.load(path)
+    engines = build(tmp_path, FakeRu())
+    try:
+        issues = pipeline.check_document(doc, engines, UserDictionary(tmp_path / "словарь.txt"), Settings())
+    finally:
+        engines.close()
+    ids = {i.rule_id for i in issues}
+    assert {"typo.double_space", "punct.comma_conj"} <= ids
+    assert all(i.engine in ("rules", "lt") for i in issues)
+
+
+def test_user_rules_loaded_from_user_dir(tmp_path):
+    (tmp_path / "правила.yaml").write_text("- id: тнг\n  найти: тнг\n  заменить: тенге\n  сообщение: 'Пишите «тенге»'\n", encoding="utf-8")
+    path = make_docx(tmp_path / "а.docx", body=["Сумма 500 тнг взыскана."])
+    doc = model.load(path)
+    engines = factory.build_engines(UserDictionary(tmp_path / "словарь.txt"), no_lt=True, user_dir=tmp_path)
+    try:
+        issues = pipeline.check_document(doc, engines, UserDictionary(tmp_path / "словарь.txt"), Settings())
+    finally:
+        engines.close()
+    assert [(i.rule_id, i.engine, i.suggestions) for i in issues if i.engine == "user"] == [("user.тнг", "user", ["тенге"])]

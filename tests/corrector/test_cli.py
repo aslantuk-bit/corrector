@@ -48,3 +48,11 @@ def test_version(capsys):
     with pytest.raises(SystemExit):
         cli.main(["--version"])
     assert "0.2.0" in capsys.readouterr().out
+
+
+def test_cli_reports_bad_user_rule(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr("corrector.core.paths.user_dir", lambda: tmp_path)
+    (tmp_path / "правила.yaml").write_text("- id: плохое\n  найти: '['\n  сообщение: m\n", encoding="utf-8")
+    path = make_docx(tmp_path / "акт.docx", body=["Текст."])
+    assert cli.main(["--check", str(path), "--no-lt"]) == 0
+    assert "правило 1 (плохое)" in capsys.readouterr().err

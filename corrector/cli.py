@@ -82,7 +82,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.lang:
         settings.language = args.lang
     user_dict = UserDictionary(user_dir / DICT_FILE)
-    engines = factory.build_engines(user_dict, no_lt=args.no_lt)
+    engines = factory.build_engines(user_dict, no_lt=args.no_lt, user_dir=user_dir)
+    if engines.rule_resources is not None:
+        for error in engines.rule_resources.user_rule_errors:
+            print(f"правила.yaml: {error}", file=sys.stderr)
     failed = False
     all_json: list[dict] = []
     try:
