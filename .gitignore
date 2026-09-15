@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.spec.bak
+.DS_Store
+словарь.txt
+настройки.json
+logs/
