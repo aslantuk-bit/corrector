@@ -127,35 +127,13 @@ def default_java(base_dir: Path) -> Path:
     return base_dir / "java" / "bin" / ("java.exe" if sys.platform == "win32" else "java")
 
 
-def active_code_page() -> str | None:
-    """Кодовая страница ANSI, в которой запускатель Java читает свой путь; None вне Windows."""
-    if sys.platform != "win32":
-        return None
-    acp = ctypes.windll.kernel32.GetACP()
-    return "utf-8" if acp == 65001 else f"cp{acp}"
 
-
-def path_fits_code_page(path: Path, encoding: str | None) -> bool:
-    if encoding is None:
-        return True
-    try:
-        str(path).encode(encoding)
-        return True
-    except (UnicodeEncodeError, LookupError):
-        return False
-
-
-def default_fallback_roots() -> list[Path]:
-    """Папки без символов вне кодовой страницы, куда можно скопировать Java на Windows."""
-    if sys.platform != "win32":
-        return []
-    roots = [
-        os.environ.get("PUBLIC", r"C:\Users\Public"),
-        os.environ.get("ProgramData", r"C:\ProgramData"),
-        os.environ.get("SystemDrive", "C:") + r"\Temp",
-        os.environ.get("TEMP", ""),
-    ]
-    return [Path(r) for r in roots if r]
+from corrector.core.javaenv import (  # noqa: E402 — общий обход ловушки Java
+    active_code_page,
+    copy_to_safe_dir,
+    default_fallback_roots,
+    path_fits_code_page,
+)
 
 
 def copy_java_to_safe_dir(
@@ -163,36 +141,5 @@ def copy_java_to_safe_dir(
     encoding: str | None = None,
     fallback_roots: list[Path] | None = None,
 ) -> tuple[Path | None, str]:
-    """Копирует папку Java в первую подходящую папку из fallback_roots и возвращает (папка, пояснение).
-
-    Подходящая папка существует, укладывается в кодовую страницу и доступна для записи.
-    Если копия уже есть и файл release совпадает, копирование не повторяется.
-    """
-    if not java_dir.is_dir():
-        return None, f"копия не удалась: нет исходной папки {java_dir}"
-    roots = default_fallback_roots() if fallback_roots is None else fallback_roots
-    reasons = []
-    for root in roots:
-        if not root.is_dir():
-            reasons.append(f"{root}: нет папки")
-            continue
-        if not path_fits_code_page(root, encoding):
-            reasons.append(f"{root}: символы вне кодовой страницы")
-            continue
-        if not write_test(root):
-            reasons.append(f"{root}: нет записи")
-            continue
-        target = root / "corrector-java" / "jre"
-        source_release = (java_dir / "release").read_text(encoding="utf-8", errors="replace") if (java_dir / "release").exists() else ""
-        target_release = (target / "release").read_text(encoding="utf-8", errors="replace") if (target / "release").exists() else None
-        if target_release is not None and target_release == source_release:
-            return target, f"копия в {target} (уже была)"
-        try:
-            if target.exists():
-                shutil.rmtree(target)
-            shutil.copytree(java_dir, target)
-        except OSError as error:
-            reasons.append(f"{root}: {error}")
-            continue
-        return target, f"копия в {target}"
-    return None, "копия не удалась: " + ("; ".join(reasons) if reasons else "нет подходящих папок")
+    roots = fallback_roots if fallback_roots is not None else default_fallback_roots()
+    return copy_to_safe_dir(java_dir, "java", encoding, roots)
