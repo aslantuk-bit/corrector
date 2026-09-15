@@ -1,0 +1,58 @@
+name: windows
+
+on:
+  push:
+    branches: [main, stage0]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Зависимости
+        run: pip install -r requirements-dev.txt
+
+      - name: Тесты
+        run: python -m pytest -q
+
+      - name: Java по замку
+        run: python sborka/fetch_artifacts.py jre-windows-x64
+
+      - name: PyInstaller
+        run: pyinstaller --noconfirm sborka/launchcheck.spec
+
+      - name: Папка поставки и архив
+        run: python sborka/assemble.py launchcheck
+
+      - name: Запуск собранной программы без окна
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "dist/bundle/Проверка_запуска/Проверка_запуска.exe").Path
+          $out = Join-Path $env:RUNNER_TEMP "report"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $p = Start-Process -FilePath $exe -ArgumentList @("--report-only", "--out", $out) -Wait -PassThru
+          $report = Join-Path $out "отчёт_запуска.txt"
+          Get-Content $report
+          if ($p.ExitCode -ne 0) { throw "код возврата $($p.ExitCode)" }
+          if (-not (Select-String -Path $report -Pattern "Java: OK" -Quiet)) { throw "в отчёте нет строки 'Java: OK'" }
+          if (-not (Select-String -Path $report -Pattern "Qt: 6.11.2" -Quiet)) { throw "в отчёте нет строки 'Qt: 6.11.2'" }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: proverka-zapuska-win64
+          path: dist/bundle/*.zip
+
+      - uses: softprops/action-gh-release@v3
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: dist/bundle/*.zip

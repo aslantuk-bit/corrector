@@ -20,3 +20,9 @@
 архив `proverka-zapuska-<версия>-win64.zip` лежит в артефактах запуска, а при тэге `v*` —
 в релизе. Локально на Mac: `pyinstaller --noconfirm sborka/launchcheck.spec` и
 `python sborka/assemble.py launchcheck` (получится сборка для Mac, для проверки скриптов).
+
+## Где взять архив
+
+GitHub → репозиторий `aslantuk-bit/corrector` → «Releases» → `proverka-zapuska-<версия>-win64.zip`.
+Между релизами свежий архив лежит в артефактах последнего запуска на вкладке «Actions».
+Лист приёмки на рабочем ПК: `docs/acceptance-stage0.md`.
