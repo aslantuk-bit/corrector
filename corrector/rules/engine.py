@@ -31,10 +31,19 @@ class RulesEngine:
 
 def default_rules(resources: RuleResources) -> list[Rule]:
     from corrector.rules.alphabets import MixedAlphabetRule, RomanNumeralRule
+    from corrector.rules.legal_ru import LEGAL_RU_RULES
+    from corrector.rules.names import NamesConsistencyRule
+    from corrector.rules.official import OfficialNamesRule
+    from corrector.rules.punct_kk import PUNCT_KK_RULES
+    from corrector.rules.repeats import DoubleWordRule, NearRepeatRule
+    from corrector.rules.sentences import LongSentenceRule
     from corrector.rules.typography import TYPOGRAPHY_RULES
 
     rules: list[Rule] = []
     rules += TYPOGRAPHY_RULES
     rules += [MixedAlphabetRule(), RomanNumeralRule()]
+    rules += [DoubleWordRule(), NearRepeatRule(), LongSentenceRule(), NamesConsistencyRule(), OfficialNamesRule()]
+    rules += LEGAL_RU_RULES
+    rules += PUNCT_KK_RULES
     rules += list(resources.user_rules)
     return rules
