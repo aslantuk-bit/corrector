@@ -91,9 +91,11 @@ def load(path: Path) -> DocumentModel:
                         walk(cell, "table")
 
     walk(document, "body")
-    for section in document.sections:
+    for section in document.sections:  # пустые колонтитулы есть в каждом документе — пропускаем
         for paragraph in section.header.paragraphs:
-            add(paragraph, "header")
+            if paragraph.text.strip():
+                add(paragraph, "header")
         for paragraph in section.footer.paragraphs:
-            add(paragraph, "footer")
+            if paragraph.text.strip():
+                add(paragraph, "footer")
     return DocumentModel(path, document, paragraphs)
