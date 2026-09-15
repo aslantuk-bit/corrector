@@ -2,9 +2,12 @@ name: windows
 
 on:
   push:
-    branches: [main, stage0]
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+
+permissions:
+  contents: write  # релиз по тэгу; по умолчанию токен workflow только читает
 
 jobs:
   build:
