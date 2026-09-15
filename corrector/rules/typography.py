@@ -8,7 +8,8 @@ from corrector.rules.patterns import PatternRule
 W, T = Level.WARNING, Category.TYPOGRAPHY
 CYR = "А-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі"
 UP = "А-ЯЁӘҒҚҢӨҰҮҺІ"
-ABBREVIATIONS = r"(?:[Сс]т|[Сс]тр|[Пп]п|[Пп]|[Чч]|[Аа]бз|[Гг]л|[Рр]азд|[Гг]|[Уу]л|[Дд]|[Кк]в|[Кк]аб|[Оо]ф|[Тт]|[Бб]ап|[Тт]арм|[Бб]|[Ққ]|[Кк]өш)"
+# однобуквенные сокращения только строчными: заглавная «Г.» перед заглавной — это инициал
+ABBREVIATIONS = r"(?:[Сс]т|[Сс]тр|[Пп]п|п|ч|[Аа]бз|[Гг]л|[Рр]азд|г|[Уу]л|д|[Кк]в|[Кк]аб|[Оо]ф|т|[Бб]ап|[Тт]арм|б|қ|[Кк]өш)"
 
 
 def _rule(id, message, pattern, replacement=None, flags=0, condition=None, lang="any"):

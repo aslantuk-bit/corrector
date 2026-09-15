@@ -10,6 +10,26 @@ from corrector.rules.base import Rule, make_issue
 from corrector.rules.context import DocContext, ParaContext
 from corrector.rules.repeats import lemma
 
+KK_NAME_AFFIXES = sorted(["тің", "тың", "дің", "дың", "нің", "ның", "тан", "тен", "дан", "ден", "нан", "нен", "мен", "бен", "пен",
+                          "ке", "ге", "қа", "ға", "та", "те", "да", "де", "ты", "ті", "ды", "ді", "на", "не", "сы", "сі", "ы", "і"],
+                         key=len, reverse=True)
+
+
+def name_lemma(word: str, lang: str, doc: DocContext) -> str:
+    """Основа имени: для казахского снимаем падежные и притяжательные аффиксы, для русского — нормальная форма."""
+    if lang != "kk":
+        return lemma(word, lang, doc)
+    stem = word.lower()
+    changed = True
+    while changed:
+        changed = False
+        for affix in KK_NAME_AFFIXES:
+            if stem.endswith(affix) and len(stem) - len(affix) >= 4:
+                stem = stem[: -len(affix)]
+                changed = True
+                break
+    return stem
+
 
 def levenshtein(a: str, b: str) -> int:
     previous = list(range(len(b) + 1))
@@ -41,7 +61,7 @@ class NamesConsistencyRule(Rule):
             for token in para.words:
                 if _is_name(token, para):
                     occurrences[token.text].append((para, token))
-                    lemmas.setdefault(token.text, lemma(token.text, para.lang, doc))
+                    lemmas.setdefault(token.text, name_lemma(token.text, para.lang, doc))
         counts = Counter({form: len(items) for form, items in occurrences.items()})
         by_lemma: dict[str, int] = defaultdict(int)
         for form, n in counts.items():
