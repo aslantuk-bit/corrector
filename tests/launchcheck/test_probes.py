@@ -84,3 +84,80 @@ def test_app_dir_from_sources_is_cwd():
 def test_default_java_path(tmp_path):
     expected = tmp_path / "java" / "bin" / ("java.exe" if sys.platform == "win32" else "java")
     assert probes.default_java(tmp_path) == expected
+
+
+def test_path_fits_code_page():
+    assert probes.path_fits_code_page(Path("C:/Проверка_запуска/java"), "cp1252") is False
+    assert probes.path_fits_code_page(Path("C:/Проверка_запуска/java"), "cp1251") is True
+    assert probes.path_fits_code_page(Path("C:/Users/Әсел/java"), "cp1251") is False
+    assert probes.path_fits_code_page(Path("C:/plain/java"), "cp1252") is True
+    assert probes.path_fits_code_page(Path("C:/Проверка"), None) is True
+
+
+def make_java_dir(root: Path, name: str = "java") -> Path:
+    java_dir = root / name
+    (java_dir / "bin").mkdir(parents=True)
+    (java_dir / "bin" / "java").write_bytes(b"java")
+    (java_dir / "release").write_text("JAVA_VERSION=21\n")
+    return java_dir
+
+
+def test_copy_java_to_safe_dir_copies_into_first_writable_root(tmp_path):
+    java_dir = make_java_dir(tmp_path / "Проверка_запуска")
+    roots = [tmp_path / "нет-такой", tmp_path / "public"]
+    (tmp_path / "public").mkdir()
+    copy_dir, note = probes.copy_java_to_safe_dir(java_dir, fallback_roots=roots)
+    assert copy_dir == tmp_path / "public" / "corrector-java" / "jre"
+    assert (copy_dir / "bin" / "java").read_bytes() == b"java"
+    assert note == f"копия в {copy_dir}"
+
+
+def test_copy_java_to_safe_dir_reuses_existing_copy(tmp_path):
+    java_dir = make_java_dir(tmp_path / "Проверка_запуска")
+    roots = [tmp_path / "public"]
+    (tmp_path / "public").mkdir()
+    copy_dir, _ = probes.copy_java_to_safe_dir(java_dir, fallback_roots=roots)
+    (copy_dir / "bin" / "java").write_bytes(b"already-there")
+    copy_dir2, note = probes.copy_java_to_safe_dir(java_dir, fallback_roots=roots)
+    assert copy_dir2 == copy_dir
+    assert (copy_dir / "bin" / "java").read_bytes() == b"already-there"
+    assert note == f"копия в {copy_dir} (уже была)"
+
+
+def test_copy_java_to_safe_dir_recopies_when_release_differs(tmp_path):
+    java_dir = make_java_dir(tmp_path / "Проверка_запуска")
+    roots = [tmp_path / "public"]
+    (tmp_path / "public").mkdir()
+    copy_dir, _ = probes.copy_java_to_safe_dir(java_dir, fallback_roots=roots)
+    (copy_dir / "release").write_text("JAVA_VERSION=17\n")
+    (copy_dir / "bin" / "java").write_bytes(b"old")
+    probes.copy_java_to_safe_dir(java_dir, fallback_roots=roots)
+    assert (copy_dir / "bin" / "java").read_bytes() == b"java"
+
+
+def test_copy_java_to_safe_dir_skips_roots_outside_code_page(tmp_path):
+    java_dir = make_java_dir(tmp_path / "Проверка_запуска")
+    cyr_root = tmp_path / "Общая"
+    cyr_root.mkdir()
+    ascii_root = tmp_path / "public"
+    ascii_root.mkdir()
+    copy_dir, _ = probes.copy_java_to_safe_dir(java_dir, encoding="cp1252", fallback_roots=[cyr_root, ascii_root])
+    assert copy_dir == ascii_root / "corrector-java" / "jre"
+
+
+def test_copy_java_to_safe_dir_without_roots(tmp_path):
+    java_dir = make_java_dir(tmp_path / "Проверка_запуска")
+    copy_dir, note = probes.copy_java_to_safe_dir(java_dir, fallback_roots=[])
+    assert copy_dir is None
+    assert note.startswith("копия не удалась")
+
+
+def test_copy_java_to_safe_dir_missing_source(tmp_path):
+    copy_dir, note = probes.copy_java_to_safe_dir(tmp_path / "нет", fallback_roots=[tmp_path])
+    assert copy_dir is None
+    assert "нет исходной папки" in note
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="на Windows кодовая страница настоящая")
+def test_active_code_page_outside_windows():
+    assert probes.active_code_page() is None
