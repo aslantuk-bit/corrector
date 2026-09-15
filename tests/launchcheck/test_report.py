@@ -87,10 +87,10 @@ def test_run_all_default_java_path(tmp_path):
 
 
 def test_check_java_falls_back_to_copy(tmp_path, monkeypatch):
-    """Прямой запуск падает (java в папке «Проверка…»), копия в безопасную папку работает."""
-    java_dir = tmp_path / "Проверка_запуска" / "java"
+    """Прямой запуск падает (java в папке с меткой unsafe), копия в безопасную папку работает."""
+    java_dir = tmp_path / "Проверка_запуска-unsafe" / "java"
     (java_dir / "bin").mkdir(parents=True)
-    java_exe = make_fake_java(java_dir / "bin", path_sensitive=True)
+    java_exe = make_fake_java(java_dir / "bin", fail_if_path_contains="unsafe")
     (java_dir / "release").write_text("JAVA_VERSION=21\n")
     public = tmp_path / "public"
     public.mkdir()
@@ -106,9 +106,9 @@ def test_check_java_falls_back_to_copy(tmp_path, monkeypatch):
 
 
 def test_check_java_reports_failed_copy(tmp_path, monkeypatch):
-    java_dir = tmp_path / "Проверка_запуска" / "java"
+    java_dir = tmp_path / "Проверка_запуска-unsafe" / "java"
     (java_dir / "bin").mkdir(parents=True)
-    java_exe = make_fake_java(java_dir / "bin", path_sensitive=True)
+    java_exe = make_fake_java(java_dir / "bin", fail_if_path_contains="unsafe")
     monkeypatch.setattr(report.probes, "default_fallback_roots", lambda: [tmp_path / "нет-такой"])
 
     results = report.check_java(java_exe)
