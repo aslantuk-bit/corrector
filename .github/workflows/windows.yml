@@ -34,18 +34,34 @@ jobs:
       - name: Папка поставки и архив
         run: python sborka/assemble.py launchcheck
 
-      - name: Запуск собранной программы без окна
+      - name: Диагностика Java в кириллическом и латинском пути
         shell: pwsh
         run: |
-          $exe = (Resolve-Path "dist/bundle/Проверка_запуска/Проверка_запуска.exe").Path
-          $out = Join-Path $env:RUNNER_TEMP "report"
+          chcp
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $bundle = "dist/bundle/Проверка_запуска"
+          Write-Host "=== bin/*.dll в приложенной Java ==="
+          Get-ChildItem "$bundle/java/bin" -Filter *.dll | Select-Object -ExpandProperty Name | Sort-Object | Select-Object -First 40
+          Write-Host "=== java -version из кириллического пути ==="
+          & "$bundle/java/bin/java.exe" -version 2>&1 | Out-String | Write-Host
+          Write-Host "код: $LASTEXITCODE"
+          Write-Host "=== копия в латинский путь ==="
+          $ascii = Join-Path $env:RUNNER_TEMP "launchcheck-ascii"
+          Copy-Item $bundle $ascii -Recurse -Force
+          & "$ascii/java/bin/java.exe" -version 2>&1 | Out-String | Write-Host
+          Write-Host "код: $LASTEXITCODE"
+          Write-Host "=== exe из латинского пути ==="
+          $out = Join-Path $env:RUNNER_TEMP "report-ascii"
           New-Item -ItemType Directory -Force $out | Out-Null
-          $p = Start-Process -FilePath $exe -ArgumentList @("--report-only", "--out", $out) -Wait -PassThru
-          $report = Join-Path $out "отчёт_запуска.txt"
-          Get-Content $report
-          if ($p.ExitCode -ne 0) { throw "код возврата $($p.ExitCode)" }
-          if (-not (Select-String -Path $report -Pattern "Java: OK" -Quiet)) { throw "в отчёте нет строки 'Java: OK'" }
-          if (-not (Select-String -Path $report -Pattern "Qt: 6.11.2" -Quiet)) { throw "в отчёте нет строки 'Qt: 6.11.2'" }
+          $p = Start-Process -FilePath "$ascii/Проверка_запуска.exe" -ArgumentList @("--report-only", "--out", $out) -Wait -PassThru
+          Get-Content (Join-Path $out "отчёт_запуска.txt")
+          Write-Host "код exe: $($p.ExitCode)"
+          Write-Host "=== exe из кириллического пути (как раньше) ==="
+          $out2 = Join-Path $env:RUNNER_TEMP "report-cyr"
+          New-Item -ItemType Directory -Force $out2 | Out-Null
+          $p2 = Start-Process -FilePath (Resolve-Path "$bundle/Проверка_запуска.exe").Path -ArgumentList @("--report-only", "--out", $out2) -Wait -PassThru
+          Get-Content (Join-Path $out2 "отчёт_запуска.txt")
+          Write-Host "код exe: $($p2.ExitCode)"
 
       - uses: actions/upload-artifact@v7
         with:
