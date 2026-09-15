@@ -50,6 +50,7 @@ corrector/
   docs/vm-setup.md                виртуальная Windows 11 ARM в UTM: пошагово, что делает автор руками
   docs/acceptance-stage0.md       что должен сделать коллега на рабочем ПК и что прислать
   tests/
+    __init__.py                   обязателен: иначе tests/launchcheck затеняет пакет launchcheck
     conftest.py                   QT_QPA_PLATFORM=offscreen до импорта Qt
     launchcheck/conftest.py       make_fake_java(directory, exit_code, sleep) -> Path
     launchcheck/test_probes.py
@@ -65,7 +66,7 @@ corrector/
 ### Task 1: Каркас репозитория и окружение
 
 **Files:**
-- Create: `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, `.gitignore`, `README.md`, `tools/dev_setup.sh`, `tests/conftest.py`, `launchcheck/__init__.py`, `tests/launchcheck/__init__.py` (пустой), `tests/sborka/__init__.py` (пустой)
+- Create: `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, `.gitignore`, `README.md`, `tools/dev_setup.sh`, `tests/conftest.py`, `launchcheck/__init__.py`, `tests/__init__.py`, `tests/launchcheck/__init__.py`, `tests/sborka/__init__.py` (все три пустые)
 
 **Interfaces:**
 - Produces: `launchcheck.__version__ == "0.1.0"`; команда `.venv/bin/python -m pytest -q` работает; `import PySide6` работает в `.venv`.
