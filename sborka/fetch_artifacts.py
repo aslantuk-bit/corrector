@@ -77,17 +77,42 @@ def fetch(name: str, entry: dict, vendor: Path = VENDOR) -> Path:
     return target
 
 
+def fetch_file(name: str, entry: dict, root: Path = ROOT) -> Path:
+    """Одиночный файл из замка кладётся по entry['path'] относительно корня репозитория."""
+    target = root / entry["path"]
+    if target.is_file() and sha256_of(target) == entry["sha256"]:
+        return target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(target.suffix + ".part")
+    download(entry["url"], temporary)
+    actual = sha256_of(temporary)
+    if actual != entry["sha256"]:
+        temporary.unlink(missing_ok=True)
+        raise ValueError(f"{name}: контрольная сумма не совпала: {actual} вместо {entry['sha256']}")
+    temporary.replace(target)
+    return target
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Скачать артефакты из artifacts.lock в vendor/")
-    parser.add_argument("names", nargs="+", help="имена записей из artifacts.lock")
+    parser = argparse.ArgumentParser(description="Скачать артефакты из artifacts.lock в vendor/ или в data/")
+    parser.add_argument("names", nargs="*", help="имена записей из artifacts.lock")
     parser.add_argument("--vendor", type=Path, default=VENDOR)
+    parser.add_argument("--files", action="store_true", help="скачать все записи с полем path в их пути в репозитории")
     args = parser.parse_args(argv)
     lock = load_lock()
+    if args.files:
+        for name, entry in lock.items():
+            if "path" in entry:
+                print(f"{name} → {fetch_file(name, entry)}")
     for name in args.names:
         if name not in lock:
             print(f"нет в artifacts.lock: {name}", file=sys.stderr)
             return 2
-        print(f"{name} → {fetch(name, lock[name], args.vendor)}")
+        entry = lock[name]
+        if "path" in entry:
+            print(f"{name} → {fetch_file(name, entry)}")
+        else:
+            print(f"{name} → {fetch(name, entry, args.vendor)}")
     return 0
 
 

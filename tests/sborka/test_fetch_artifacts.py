@@ -31,7 +31,7 @@ def test_lock_file_has_both_jres():
     for entry in lock.values():
         assert len(entry["sha256"]) == 64
         assert entry["url"].startswith("https://")
-        assert entry["unpack_root"]
+        assert entry.get("unpack_root") or entry.get("path")
 
 
 def test_sha256_of(tmp_path):
@@ -80,3 +80,32 @@ def test_fetch_skips_when_stamp_matches(tmp_path):
 def test_main_unknown_name_returns_two(capsys):
     assert fa.main(["нет-такого"]) == 2
     assert "нет в artifacts.lock" in capsys.readouterr().err
+
+
+def test_fetch_file_writes_to_path_and_verifies(tmp_path):
+    source = tmp_path / "src.dic"
+    source.write_bytes(b"word/1\n")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    entry = {"url": source.as_uri(), "sha256": digest, "path": "data/x/x.dic"}
+    target = fa.fetch_file("x.dic", entry, root=tmp_path / "repo")
+    assert target == tmp_path / "repo" / "data" / "x" / "x.dic"
+    assert target.read_bytes() == b"word/1\n"
+
+
+def test_fetch_file_skips_when_present_and_matching(tmp_path):
+    source = tmp_path / "src.dic"
+    source.write_bytes(b"word/1\n")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    entry = {"url": source.as_uri(), "sha256": digest, "path": "data/x/x.dic"}
+    fa.fetch_file("x.dic", entry, root=tmp_path / "repo")
+    source.unlink()
+    assert fa.fetch_file("x.dic", entry, root=tmp_path / "repo").exists()
+
+
+def test_fetch_file_rejects_wrong_checksum(tmp_path):
+    source = tmp_path / "src.dic"
+    source.write_bytes(b"word/1\n")
+    entry = {"url": source.as_uri(), "sha256": "0" * 64, "path": "data/x/x.dic"}
+    with pytest.raises(ValueError, match="контрольная сумма"):
+        fa.fetch_file("x.dic", entry, root=tmp_path / "repo")
+    assert not (tmp_path / "repo" / "data" / "x" / "x.dic").exists()
