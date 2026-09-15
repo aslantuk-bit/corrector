@@ -26,3 +26,12 @@
 GitHub → репозиторий `aslantuk-bit/corrector` → «Releases» → `proverka-zapuska-<версия>-win64.zip`.
 Между релизами свежий архив лежит в артефактах последнего запуска на вкладке «Actions».
 Лист приёмки на рабочем ПК: `docs/acceptance-stage0.md`.
+
+## Командная строка (этапы 1–2)
+
+    .venv/bin/python -m corrector --check акт.docx --report          # с LanguageTool из vendor/
+    .venv/bin/python -m corrector --check папка --report --out отчёты
+    .venv/bin/python -m corrector --check акт.docx --json --no-lt    # только словари
+
+Отчёт `<имя>_отчёт.txt` кладётся рядом с файлом или в `--out`. Словарь исключений `словарь.txt`
+и `настройки.json` читаются из папки программы (или из папки пользователя, если она защищена от записи).
