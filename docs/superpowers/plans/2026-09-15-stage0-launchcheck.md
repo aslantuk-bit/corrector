@@ -218,7 +218,7 @@ def make_fake_java(directory: Path, exit_code: int = 0, sleep: float = 0) -> Pat
     """Поддельная java: печатает строку версии в stderr, как настоящая, и выходит с нужным кодом."""
     if sys.platform == "win32":
         path = directory / "java.bat"
-        wait = f"timeout /t {int(sleep)} /nobreak >nul\r\n" if sleep else ""
+        wait = f"ping -n {int(sleep) + 1} 127.0.0.1 >nul\r\n" if sleep else ""  # timeout не работает без консоли
         path.write_text(
             "@echo off\r\n" + wait + '>&2 echo openjdk version "21.0.12.1"\r\n' + f"exit /b {exit_code}\r\n"
         )
@@ -1199,7 +1199,6 @@ from sborka import assemble as asm
 def make_tree(root: Path, files: dict[str, bytes]) -> None:
     for name, data in files.items():
         path = root / name
-        path.mkdir_parents = None
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
 
