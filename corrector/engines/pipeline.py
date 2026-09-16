@@ -17,7 +17,15 @@ def check_document(model: DocumentModel, engines: Engines, user_dict: UserDictio
     languages = lang.detect_all(texts, settings.language)
     ru = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "ru" and p.text.strip()]
     kk = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "kk" and p.text.strip()]
+    mixed = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "mixed" and p.text.strip()]
     issues: list[Issue] = []
+    for index, text in mixed:  # двуязычный абзац: каждое слово — по своему словарю, без подсказок «русское слово»
+        tokens = words(text)
+        kk_tokens = [t for t in tokens if lang.has_kk_letters(t.text)]
+        # слово без казахских букв может быть казахским (РЕСПУБЛИКАСЫ): русскому словарю отдаём только неизвестные казахскому
+        ru_tokens = [t for t in tokens if not lang.has_kk_letters(t.text) and not engines.kk.dictionary.known(t.text)]
+        issues += engines.kk.check_tokens(index, text, kk_tokens, foreign_hints=False)
+        issues += engines.ru_spell.check_tokens(index, text, ru_tokens)
     if ru:
         issues += engines.ru.check(ru)
         for index, text in ru:

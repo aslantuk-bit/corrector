@@ -15,7 +15,10 @@ CONJUNCTIONS = {"что", "чтобы", "который", "которая", "к�
 PAIRS = {("так", "как"), ("потому", "что")}
 EXCEPTIONS = {"то", "вот", "не", "а", "и", "лишь", "только", "едва", "потому", "так", "разве", "ли", "как", "тем",
               "прежде", "после", "до", "перед", "затем", "в", "о", "об", "при", "для", "на", "за", "из", "с", "иное",
-              "все", "всё", "тот", "та", "те", "того", "той", "тех", "ни", "же", "бы"}
+              "все", "всё", "тот", "та", "те", "того", "той", "тех", "ни", "же", "бы", "также", "согласно", "случае",
+              "даже", "особенно", "именно", "между", "среди", "вследствие", "ввиду", "кроме", "помимо", "против", "у",
+              "к", "по", "от", "без", "через", "над", "под", "про", "вместо", "относительно", "касательно"}
+WINDOW = 3  # запятая среди предыдущих трёх токенов уже обособила оборот («стороне, в пользу которой»)
 
 
 def _not_after_privesti(match, para, doc):
@@ -71,6 +74,8 @@ class CommaBeforeConjunctionRule(Rule):
             if pair not in PAIRS and lowered not in CONJUNCTIONS:
                 continue
             if pair not in PAIRS and previous.text.lower() in EXCEPTIONS:
+                continue
+            if any(t.kind == "punct" and t.text in ",;:—–-(«" for t in tokens[max(0, i - WINDOW):i]):
                 continue
             gap_start, gap_end = previous.end, token.start
             if gap_end > gap_start and para.text[gap_start:gap_end].strip() == "":

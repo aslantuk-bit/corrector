@@ -10,3 +10,4 @@ __pycache__/
 словарь.txt
 настройки.json
 logs/
+data/review/

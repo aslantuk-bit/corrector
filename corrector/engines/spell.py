@@ -5,14 +5,17 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from collections import Counter
+
 from corrector.core.issue import Category, Issue, Level
-from corrector.core.text import Token, words
+from corrector.core.text import Token, sentences, words
 from corrector.core.userdict import UserDictionary
 from corrector.engines.base import EngineStatus
 from corrector.engines.hunspell import SpellDictionary
 
 LATIN = re.compile(r"[A-Za-z]")
 UNKNOWN_MESSAGE = "Возможно, орфографическая ошибка"
+NAME_MESSAGE = "Незнакомое слово с заглавной буквы: имя или название? Проверьте написание"
 
 
 def load_lexicon(path: Path) -> set[str]:
@@ -21,6 +24,15 @@ def load_lexicon(path: Path) -> set[str]:
     except FileNotFoundError:
         return set()
     return {line.strip().lower() for line in lines if line.strip() and not line.lstrip().startswith("#")}
+
+
+def load_names(path: Path) -> set[str]:
+    """Имена и названия из корпуса: регистр важен."""
+    try:
+        lines = Path(path).read_text(encoding="utf-8-sig").splitlines()
+    except FileNotFoundError:
+        return set()
+    return {line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#")}
 
 
 def inside_quotes(text: str, position: int) -> bool:
@@ -47,8 +59,10 @@ class SpellEngine:
         other: SpellDictionary | None = None,
         foreign_message: str = "",
         suggestions: bool = True,
+        names: set[str] | None = None,
     ) -> None:
         self.suggestions = suggestions
+        self.names = names or set()
         self.name = name
         self.dictionary = dictionary
         self.lexicon = lexicon
@@ -60,13 +74,16 @@ class SpellEngine:
         return EngineStatus(self.name, True)
 
     def check(self, paragraphs: list[tuple[int, str]]) -> list[Issue]:
+        counts = Counter(t.text for _, text in paragraphs for t in words(text))
         issues: list[Issue] = []
         for index, text in paragraphs:
-            issues += self.check_tokens(index, text, words(text))
+            issues += self.check_tokens(index, text, words(text), counts=counts)
         return issues
 
-    def check_tokens(self, index: int, text: str, tokens: list[Token]) -> list[Issue]:
+    def check_tokens(self, index: int, text: str, tokens: list[Token], foreign_hints: bool = True,
+                     counts: Counter | None = None) -> list[Issue]:
         issues: list[Issue] = []
+        starts = {s for s, _ in sentences(text)}
         for token in tokens:
             word = token.text
             if self._skip(word) or self._accepted(word):
@@ -74,9 +91,15 @@ class SpellEngine:
             if self.user_dict.covers(text, token.start, token.end):
                 continue
             if self.other is not None and self.other.known(word):
-                if not inside_quotes(text, token.start):
+                if foreign_hints and not inside_quotes(text, token.start):
                     issues.append(Issue(index, token.start, token.end, Category.STYLE, Level.HINT,
                                         f"{self.name}:foreign", self.name, self.foreign_message))
+                continue
+            if word[0].isupper() and word[1:].islower() and token.start not in starts:
+                if counts is not None and counts[word] >= 2:
+                    continue  # имя, написанное одинаково не один раз
+                issues.append(Issue(index, token.start, token.end, Category.SPELLING, Level.HINT,
+                                    f"{self.name}:name", self.name, NAME_MESSAGE))
                 continue
             variants = self.dictionary.suggest(word) if self.suggestions else []
             issues.append(Issue(index, token.start, token.end, Category.SPELLING, Level.ERROR,
@@ -91,6 +114,8 @@ class SpellEngine:
         return bool(LATIN.search(word))
 
     def _accepted(self, word: str) -> bool:
+        if word in self.names:
+            return True
         lowered = word.lower()
         if lowered in self.lexicon or self.user_dict.contains(word) or self.dictionary.known(word):
             return True

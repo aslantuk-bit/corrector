@@ -35,10 +35,26 @@ def score(text: str) -> tuple[int, int]:
     return kk, ru
 
 
+def evidence(text: str) -> tuple[int, int]:
+    """Сколько слов явно казахских (казахские буквы или частотное слово) и явно русских (частотное слово)."""
+    kk = ru = 0
+    for token in words(text):
+        lowered = token.text.lower()
+        if has_kk_letters(token.text) or lowered in KK_WORDS:
+            kk += 1
+        elif lowered in RU_WORDS:
+            ru += 1
+    return kk, ru
+
+
 def detect(text: str, previous: str = "ru") -> str:
+    """ru, kk или mixed (двуязычная шапка: не меньше трёх явных слов каждого языка)."""
     kk, ru = score(text)
     if kk == 0 and ru == 0:
         return previous
+    kk_words, ru_words = evidence(text)
+    if kk_words >= 3 and ru_words >= 3:
+        return "mixed"
     return "kk" if kk > ru else "ru"
 
 
@@ -47,6 +63,8 @@ def detect_all(texts: list[str], mode: str = "auto") -> list[str]:
         return [mode] * len(texts)
     result, previous = [], "ru"
     for text in texts:
-        previous = detect(text, previous)
-        result.append(previous)
+        code = detect(text, previous)
+        result.append(code)
+        if code != "mixed":
+            previous = code
     return result

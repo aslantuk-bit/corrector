@@ -47,7 +47,7 @@ def test_match_crossing_paragraph_boundary_is_dropped():
 
 def test_load_disabled_rules(tmp_path):
     p = tmp_path / "r.txt"
-    p.write_text("# комментарий\nWHITESPACE_RULE\n\n UPPERCASE_SENTENCE_START \n", encoding="utf-8")
+    p.write_text("# комментарий\nWHITESPACE_RULE\n\n UPPERCASE_SENTENCE_START   # пояснение\n", encoding="utf-8")
     assert lt.load_disabled_rules(p) == ["WHITESPACE_RULE", "UPPERCASE_SENTENCE_START"]
     assert lt.load_disabled_rules(tmp_path / "нет.txt") == []
 

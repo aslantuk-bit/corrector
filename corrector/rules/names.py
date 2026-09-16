@@ -15,20 +15,33 @@ KK_NAME_AFFIXES = sorted(["тің", "тың", "дің", "дың", "нің", "н�
                          key=len, reverse=True)
 
 
-def name_lemma(word: str, lang: str, doc: DocContext) -> str:
-    """Основа имени: для казахского снимаем падежные и притяжательные аффиксы, для русского — нормальная форма."""
-    if lang != "kk":
-        return lemma(word, lang, doc)
-    stem = word.lower()
+RU_NAME_ENDINGS = sorted(["ыми", "ими", "ого", "его", "ому", "ему", "ым", "им", "ом", "ем", "ой", "ей", "ую", "юю", "ая", "яя",
+                          "ые", "ие", "ых", "их", "а", "у", "е", "и", "ы", "ю", "я"], key=len, reverse=True)
+PATRONYMIC = ("ович", "евич", "ьевич", "овна", "евна", "ьевна", "ична", "инична", "ұлы", "қызы", "улы", "кызы")
+
+
+def _strip(stem: str, endings: list[str], minimum: int = 4) -> str:
     changed = True
     while changed:
         changed = False
-        for affix in KK_NAME_AFFIXES:
-            if stem.endswith(affix) and len(stem) - len(affix) >= 4:
-                stem = stem[: -len(affix)]
+        for ending in endings:
+            if stem.endswith(ending) and len(stem) - len(ending) >= minimum:
+                stem = stem[: -len(ending)]
                 changed = True
                 break
     return stem
+
+
+def name_lemma(word: str, lang: str, doc: DocContext) -> str:
+    """Основа имени: снимаем падежные окончания и аффиксы, чтобы склонение не считалось разнобоем."""
+    stem = word.lower()
+    if lang == "kk":
+        stem = _strip(stem, KK_NAME_AFFIXES)
+    return _strip(stem, RU_NAME_ENDINGS)
+
+
+def is_patronymic(word: str) -> bool:
+    return word.lower().endswith(PATRONYMIC)
 
 
 def levenshtein(a: str, b: str) -> int:
@@ -43,7 +56,7 @@ def levenshtein(a: str, b: str) -> int:
 
 def _is_name(token: Token, para: ParaContext) -> bool:
     text = token.text
-    if len(text) < 4 or not text[0].isupper() or not text[1:].islower():
+    if len(text) < 5 or not text[0].isupper() or not text[1:].islower() or is_patronymic(text):
         return False
     sentence = para.sentence_of(token.start)
     return sentence is None or sentence[0] != token.start
@@ -70,7 +83,7 @@ class NamesConsistencyRule(Rule):
         lemma_list = sorted(by_lemma, key=lambda l: -by_lemma[l])
         for i, rare in enumerate(lemma_list):
             for frequent in lemma_list[:i]:
-                limit = 1 if len(rare) <= 7 else 2
+                limit = 1 if len(rare) <= 9 else 2
                 if by_lemma[frequent] > by_lemma[rare] and levenshtein(rare, frequent) <= limit:
                     frequent_form = max((f for f in counts if lemmas[f] == frequent), key=counts.get)
                     for form in (f for f in counts if lemmas[f] == rare):

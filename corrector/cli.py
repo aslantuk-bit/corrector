@@ -72,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", action="store_true", help="записать текстовый отчёт <имя>_отчёт.txt")
     parser.add_argument("--json", action="store_true", help="напечатать замечания в JSON")
     parser.add_argument("--no-lt", action="store_true", help="не запускать LanguageTool (только словари)")
+    parser.add_argument("--no-suggestions", action="store_true", help="не подбирать варианты замены (быстрее)")
     parser.add_argument("--lang", choices=["auto", "ru", "kk"], default=None, help="язык документа (по умолчанию из настроек)")
     parser.add_argument("--version", action="version", version=f"Корректор {__version__}")
     args = parser.parse_args(argv)
@@ -82,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.lang:
         settings.language = args.lang
     user_dict = UserDictionary(user_dir / DICT_FILE)
-    engines = factory.build_engines(user_dict, no_lt=args.no_lt, user_dir=user_dir)
+    engines = factory.build_engines(user_dict, no_lt=args.no_lt, user_dir=user_dir, suggestions=not args.no_suggestions)
     if engines.rule_resources is not None:
         for error in engines.rule_resources.user_rule_errors:
             print(f"правила.yaml: {error}", file=sys.stderr)

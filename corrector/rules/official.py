@@ -38,6 +38,20 @@ def similar(fragment: str, canonical: str) -> bool:
     return difflib.SequenceMatcher(None, fragment.lower(), canonical.lower()).ratio() >= 0.85
 
 
+def word_diff(fragment: str, canonical: str) -> tuple[int, float]:
+    """Сколько слов отличается (без учёта регистра и склонения) и сходство самого отличающегося слова."""
+    frag_keys, canon_keys = _keys(fragment, canonical)
+    differing = [(f, c) for f, c in zip(frag_keys, canon_keys) if f.lower() != c.lower()]
+    if not differing:
+        return 0, 1.0
+    frag_words, canon_words = words(fragment), words(canonical)
+    worst = 1.0
+    for f, c in zip(frag_words, canon_words):
+        if f.text[:4].lower() != c.text[:4].lower():
+            worst = min(worst, difflib.SequenceMatcher(None, f.text.lower(), c.text.lower()).ratio())
+    return len(differing), worst
+
+
 class OfficialNamesRule(Rule):
     id, lang, category, level = "names.official", "any", Category.STYLE, Level.HINT
     message = "Название отличается от официального"
@@ -53,10 +67,11 @@ class OfficialNamesRule(Rule):
                 frag_keys, canon_keys = _keys(fragment, canonical)
                 if frag_keys == canon_keys:
                     continue  # совпадает или лишь склоняется
-                if [k.lower() for k in frag_keys] == [k.lower() for k in canon_keys]:
+                differing, worst = word_diff(fragment, canonical)
+                if differing == 0:
                     issues.append(make_issue(self, para, start, end, [canonical], f"Регистр букв: официально «{canonical}»"))
                     taken.append((start, end))
-                elif similar(fragment, canonical):
+                elif differing == 1 and worst >= 0.75:
                     issues.append(make_issue(self, para, start, end, [canonical], f"Официальное название: «{canonical}»"))
                     taken.append((start, end))
         return issues

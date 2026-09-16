@@ -5,10 +5,13 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import sys
 import time
 from pathlib import Path
 
-from corrector.core.settings import Settings
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # запуск как python tools/corpus_run.py
+
+from corrector.core.settings import Settings  # noqa: E402
 from corrector.core.userdict import UserDictionary
 from corrector.docx_io import model
 from corrector.engines import factory, pipeline

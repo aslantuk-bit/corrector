@@ -106,3 +106,18 @@ def test_user_rules_loaded_from_user_dir(tmp_path):
     finally:
         engines.close()
     assert [(i.rule_id, i.engine, i.suggestions) for i in issues if i.engine == "user"] == [("user.тнг", "user", ["тенге"])]
+
+
+def test_mixed_paragraph_has_no_foreign_hints_and_checks_both_dictionaries(tmp_path):
+    text = "ҚАЗАҚСТАН РЕСПУБЛИКАСЫ ЖОҒАРҒЫ СОТЫ / ВЕРХОВНЫЙ СУД РЕСПУБЛИКИ КАЗАХСТАН, судебная колегия по гражданским делам, сот алқасы шешімі"
+    path = make_docx(tmp_path / "а.docx", body=[text])
+    doc = model.load(path)
+    fake = FakeRu()
+    engines = build(tmp_path, fake)
+    try:
+        issues = pipeline.check_document(doc, engines, UserDictionary(tmp_path / "словарь.txt"), Settings())
+    finally:
+        engines.close()
+    assert fake.seen == []
+    assert [doc.paragraphs[0].text[i.start:i.end] for i in issues if i.category is Category.SPELLING] == ["колегия"]
+    assert not [i for i in issues if i.rule_id.endswith(":foreign")]

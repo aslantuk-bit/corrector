@@ -35,14 +35,15 @@ def default_rules(resources: RuleResources) -> list[Rule]:
     from corrector.rules.names import NamesConsistencyRule
     from corrector.rules.official import OfficialNamesRule
     from corrector.rules.punct_kk import PUNCT_KK_RULES
-    from corrector.rules.repeats import DoubleWordRule, NearRepeatRule
+    from corrector.rules.repeats import DoubleWordRule
     from corrector.rules.sentences import LongSentenceRule
     from corrector.rules.typography import TYPOGRAPHY_RULES
 
     rules: list[Rule] = []
     rules += TYPOGRAPHY_RULES
     rules += [MixedAlphabetRule(), RomanNumeralRule()]
-    rules += [DoubleWordRule(), NearRepeatRule(), LongSentenceRule(), NamesConsistencyRule(), OfficialNamesRule()]
+    # NearRepeatRule (rep.near) не включено: по корпусу срабатывает в 90 % актов — юридический текст повторяет термины намеренно
+    rules += [DoubleWordRule(), LongSentenceRule(), NamesConsistencyRule(), OfficialNamesRule()]
     rules += LEGAL_RU_RULES
     rules += PUNCT_KK_RULES
     rules += list(resources.user_rules)

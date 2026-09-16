@@ -31,3 +31,9 @@ def test_detect_all_carries_previous_and_respects_mode():
 
 def test_has_kk_letters():
     assert lang.has_kk_letters("Ақ") and not lang.has_kk_letters("Ак")
+
+
+def test_mixed_paragraph():
+    text = "ҚАЗАҚСТАН РЕСПУБЛИКАСЫ ЖОҒАРҒЫ СОТЫ / ВЕРХОВНЫЙ СУД РЕСПУБЛИКИ КАЗАХСТАН, судебная коллегия по гражданским делам, сот алқасы"
+    assert lang.detect(text) == "mixed"
+    assert lang.detect_all([text, "№ 5"]) == ["mixed", "ru"]

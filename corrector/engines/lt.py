@@ -57,7 +57,12 @@ def load_disabled_rules(path: Path) -> list[str]:
         lines = Path(path).read_text(encoding="utf-8-sig").splitlines()
     except FileNotFoundError:
         return []
-    return [line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#")]
+    rules = []
+    for line in lines:
+        rule = line.split("#", 1)[0].strip()
+        if rule:
+            rules.append(rule)
+    return rules
 
 
 def _free_port() -> int:

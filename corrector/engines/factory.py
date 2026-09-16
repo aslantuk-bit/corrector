@@ -11,7 +11,7 @@ from corrector.core.userdict import UserDictionary
 from corrector.engines.base import EngineStatus
 from corrector.engines.hunspell import SpellDictionary
 from corrector.engines.lt import LanguageToolClient, LanguageToolEngine, LanguageToolServer, LTStartError, load_disabled_rules
-from corrector.engines.spell import SpellEngine, load_lexicon
+from corrector.engines.spell import SpellEngine, load_lexicon, load_names
 from corrector.rules.engine import RulesEngine, default_rules
 from corrector.rules.resources import RuleResources, load_resources
 
@@ -44,6 +44,11 @@ class Engines:
             result.append(EngineStatus("rules", True, note))
         return result
 
+    def suggest(self, word: str, lang: str) -> list[str]:
+        """Варианты замены по требованию (окно запрашивает их при выборе замечания)."""
+        dictionary = self.kk.dictionary if lang == "kk" else self.ru_spell.dictionary
+        return dictionary.suggest(word)
+
     def close(self) -> None:
         if self.server is not None:
             self.server.stop()
@@ -62,9 +67,10 @@ def build_engines(
     data = data_dir or paths.data_dir()
     ru_dict = SpellDictionary(data / "ru" / "ru_RU")
     kk_dict = SpellDictionary(data / "kk" / "kk_KZ")
-    ru_spell = SpellEngine("ru_spell", ru_dict, load_lexicon(data / "lexicon_ru_legal.txt"), user_dict, suggestions=suggestions)
+    ru_spell = SpellEngine("ru_spell", ru_dict, load_lexicon(data / "lexicon_ru_legal.txt"), user_dict, suggestions=suggestions,
+                           names=load_names(data / "names_corpus_ru.txt"))
     kk_spell = SpellEngine("kk_spell", kk_dict, load_lexicon(data / "lexicon_kk_legal.txt"), user_dict, other=ru_dict,
-                           foreign_message=FOREIGN_KK, suggestions=suggestions)
+                           foreign_message=FOREIGN_KK, suggestions=suggestions, names=load_names(data / "names_corpus_kk.txt"))
     engines = Engines(ru=ru_spell, kk=kk_spell, kk_names=kk_spell, ru_spell=ru_spell)
     resources = load_resources(data, user_dir or paths.user_dir())
     engines.rules = RulesEngine(default_rules(resources), resources)
