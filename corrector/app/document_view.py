@@ -18,6 +18,9 @@ class DocumentView(QTextEdit):
     def __init__(self) -> None:
         super().__init__()
         self.setReadOnly(True)
+        font = self.font()
+        font.setPointSize(13)
+        self.setFont(font)
         self.block_starts: list[int] = []
         self.spans: list[tuple[int, int, int]] = []  # (начало, конец, id замечания) в координатах всего текста
         self.selected_id: int | None = None

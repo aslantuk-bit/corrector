@@ -47,23 +47,34 @@ def evidence(text: str) -> tuple[int, int]:
     return kk, ru
 
 
-def detect(text: str, previous: str = "ru") -> str:
-    """ru, kk или mixed (двуязычная шапка: не меньше трёх явных слов каждого языка)."""
+def detect(text: str, previous: str = "ru", ru_known=None) -> str:
+    """ru, kk или mixed (двуязычная шапка: не меньше трёх явных слов каждого языка).
+
+    ru_known(word) — проверка по русскому словарю: короткий русский абзац с казахским именем
+    («при секретаре … Нұрлан А.А.») иначе принимался бы за казахский из-за казахских букв.
+    """
     kk, ru = score(text)
     if kk == 0 and ru == 0:
         return previous
     kk_words, ru_words = evidence(text)
+    if ru_known is not None:
+        ru_words = sum(1 for t in words(text) if not has_kk_letters(t.text) and t.text.lower() not in KK_WORDS
+                       and len(t.text) >= 3 and ru_known(t.text))
     if kk_words >= 3 and ru_words >= 3:
         return "mixed"
+    if ru_words >= 2 * max(kk_words, 1):
+        return "ru"
+    if kk_words >= 2 * max(ru_words, 1):
+        return "kk"
     return "kk" if kk > ru else "ru"
 
 
-def detect_all(texts: list[str], mode: str = "auto") -> list[str]:
+def detect_all(texts: list[str], mode: str = "auto", ru_known=None) -> list[str]:
     if mode in ("ru", "kk"):
         return [mode] * len(texts)
     result, previous = [], "ru"
     for text in texts:
-        code = detect(text, previous)
+        code = detect(text, previous, ru_known)
         result.append(code)
         if code != "mixed":
             previous = code

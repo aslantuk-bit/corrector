@@ -37,3 +37,11 @@ def test_mixed_paragraph():
     text = "ҚАЗАҚСТАН РЕСПУБЛИКАСЫ ЖОҒАРҒЫ СОТЫ / ВЕРХОВНЫЙ СУД РЕСПУБЛИКИ КАЗАХСТАН, судебная коллегия по гражданским делам, сот алқасы"
     assert lang.detect(text) == "mixed"
     assert lang.detect_all([text, "№ 5"]) == ["mixed", "ru"]
+
+
+def test_short_russian_paragraph_with_kazakh_name_uses_dictionary():
+    text = "при секретаре судебного заседания Нұрлан А.А.,"
+    known = {"при", "секретаре", "судебного", "заседания"}
+    assert lang.detect(text, ru_known=lambda w: w.lower() in known) == "ru"
+    assert lang.detect("Талап қоюшы сотқа жүгінді.", ru_known=lambda w: False) == "kk"
+    assert lang.detect_all([text], ru_known=lambda w: w.lower() in known) == ["ru"]

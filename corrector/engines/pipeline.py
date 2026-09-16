@@ -17,7 +17,7 @@ from corrector.rules import context
 
 def check_document(model: DocumentModel, engines: Engines, user_dict: UserDictionary, settings: Settings) -> list[Issue]:
     texts = model.texts()
-    languages = lang.detect_all(texts, settings.language)
+    languages = lang.detect_all(texts, settings.language, ru_known=engines.ru_spell.dictionary.known)
     ru = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "ru" and p.text.strip()]
     kk = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "kk" and p.text.strip()]
     mixed = [(p.index, p.text) for p, code in zip(model.paragraphs, languages) if code == "mixed" and p.text.strip()]
