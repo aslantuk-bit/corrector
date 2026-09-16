@@ -11,7 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import launchcheck  # noqa: E402 — версия приложения
+import corrector  # noqa: E402 — версии приложений
+import launchcheck  # noqa: E402
 
 APPS = {
     "launchcheck": {
@@ -19,8 +20,23 @@ APPS = {
         "zip": "proverka-zapuska",
         "version": launchcheck.__version__,
         "instruction": ROOT / "sborka" / "ИНСТРУКЦИЯ-проверка-запуска.txt",
+        "extras": [],
+    },
+    "corrector": {
+        "folder": "Корректор",
+        "zip": "korrektor",
+        "version": corrector.__version__,
+        "instruction": ROOT / "data" / "ИНСТРУКЦИЯ.txt",
+        # (что копировать, куда внутри папки поставки); languagetool берётся из vendor/languagetool-ru
+        "extras": [
+            (ROOT / "data", "data"),
+            (ROOT / "vendor" / "languagetool-ru", "languagetool"),
+            (ROOT / "sborka" / "правила.yaml", "правила.yaml"),
+            (ROOT / "sborka" / "ЛИЦЕНЗИИ", "ЛИЦЕНЗИИ"),
+        ],
     },
 }
+EXCLUDE_DATA = shutil.ignore_patterns("review", "*.part", ".DS_Store")
 
 
 def assemble(
@@ -31,6 +47,7 @@ def assemble(
     jre: str = "jre-windows-x64",
     instruction: Path | None = None,
     zip_name: str | None = None,
+    extras: list[tuple[Path, str]] = (),
 ) -> Path:
     source = dist / app_name
     if not source.is_dir():
@@ -47,6 +64,15 @@ def assemble(
     shutil.copytree(jre_dir, bundle / "java", ignore=shutil.ignore_patterns(".artifact-sha256"))
     if instruction is not None:
         shutil.copy(instruction, bundle / "ИНСТРУКЦИЯ.txt")
+    for source_path, relative in extras:
+        target = bundle / relative
+        if not source_path.exists():
+            raise FileNotFoundError(f"нет {source_path}: подготовьте его перед сборкой")
+        if source_path.is_dir():
+            shutil.copytree(source_path, target, ignore=EXCLUDE_DATA)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(source_path, target)
 
     zip_path = bundle_root / (zip_name or f"{app_name}-{version}.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -69,6 +95,7 @@ def main(argv: list[str] | None = None) -> int:
         jre=args.jre,
         instruction=app["instruction"],
         zip_name=f"{app['zip']}-{app['version']}-{suffix}.zip",
+        extras=app.get("extras", []),
     )
     print(zip_path)
     return 0

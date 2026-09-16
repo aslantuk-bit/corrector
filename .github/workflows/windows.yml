@@ -28,31 +28,53 @@ jobs:
       - name: Тесты
         run: python -m pytest -q
 
-      - name: Java по замку
-        run: python sborka/fetch_artifacts.py jre-windows-x64
+      - name: Кэш скачанных артефактов (Java, LanguageTool)
+        uses: actions/cache@v4
+        with:
+          path: vendor/_cache
+          key: artifacts-${{ hashFiles('sborka/artifacts.lock') }}
+
+      - name: Java и LanguageTool по замку
+        run: |
+          python sborka/fetch_artifacts.py jre-windows-x64 languagetool-20260914
+          python sborka/trim_languagetool.py vendor/languagetool-20260914 vendor/languagetool-ru
 
       - name: PyInstaller
-        run: pyinstaller --noconfirm sborka/launchcheck.spec
+        run: |
+          pyinstaller --noconfirm sborka/launchcheck.spec
+          pyinstaller --noconfirm sborka/corrector.spec
 
-      - name: Папка поставки и архив
-        run: python sborka/assemble.py launchcheck
+      - name: Папки поставки и архивы
+        run: |
+          python sborka/assemble.py launchcheck
+          python sborka/assemble.py corrector
 
-      - name: Запуск собранной программы без окна
+      - name: Проверка запуска (собранная программа без окна)
         shell: pwsh
         run: |
           $exe = (Resolve-Path "dist/bundle/Проверка_запуска/Проверка_запуска.exe").Path
           $out = Join-Path $env:RUNNER_TEMP "report"
           New-Item -ItemType Directory -Force $out | Out-Null
           $p = Start-Process -FilePath $exe -ArgumentList @("--report-only", "--out", $out) -Wait -PassThru
-          $report = Join-Path $out "отчёт_запуска.txt"
-          Get-Content $report
+          Get-Content (Join-Path $out "отчёт_запуска.txt")
           if ($p.ExitCode -ne 0) { throw "код возврата $($p.ExitCode)" }
-          if (-not (Select-String -Path $report -Pattern "Java: OK" -Quiet)) { throw "в отчёте нет строки 'Java: OK'" }
-          if (-not (Select-String -Path $report -Pattern "Qt: 6.11.2" -Quiet)) { throw "в отчёте нет строки 'Qt: 6.11.2'" }
+
+      - name: Корректор (собранная командная строка с LanguageTool)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "dist/bundle/Корректор/Корректор-cli.exe").Path
+          $out = Join-Path $env:RUNNER_TEMP "korrektor"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          & $exe --check (Resolve-Path "tests/samples/образец.docx").Path --report --out $out
+          if ($LASTEXITCODE -ne 0) { throw "код возврата $LASTEXITCODE" }
+          $report = Join-Path $out "образец_отчёт.txt"
+          Get-Content $report
+          if (-not (Select-String -Path $report -Pattern "lt — работает" -Quiet)) { throw "LanguageTool не заработал в сборке" }
+          if (-not (Select-String -Path $report -Pattern "ходатайтсво" -Quiet)) { throw "в отчёте нет ожидаемой ошибки" }
 
       - uses: actions/upload-artifact@v7
         with:
-          name: proverka-zapuska-win64
+          name: sborki-win64
           path: dist/bundle/*.zip
 
       - uses: softprops/action-gh-release@v3

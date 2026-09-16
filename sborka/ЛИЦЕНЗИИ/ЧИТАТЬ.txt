@@ -1,0 +1,10 @@
+Корректор использует сторонние компоненты. Их лицензии лежат в этой папке или в самих компонентах:
+
+- LanguageTool (папка languagetool) — LGPL-2.1, файл languagetool/COPYING.txt.
+- Eclipse Temurin JRE 21 (папка java) — GPL-2.0 with Classpath Exception, файл java/legal/.
+- Словарь русского языка ru_RU (data/ru) — Александр Лебедев; условия в data/ru/README_ru_RU.txt.
+- Словарь казахского языка hunspell-kk (data/kk/kk_KZ.*) — GPL-3.0-or-later, https://github.com/iDynbek/hunspell-kk.
+- Лексикон стеммера kazsearch (data/kk/kaz_stems.*) — LGPL-3.0, https://github.com/iDynbek/kazsearch-py.
+- Библиотеки Python: PySide6 (LGPL-3.0), python-docx (MIT), spylls (MPL-2.0), pymorphy3 и словари (MIT), PyYAML (MIT).
+
+Код самого Корректора — собственная разработка. Программа распространяется внутри организации.

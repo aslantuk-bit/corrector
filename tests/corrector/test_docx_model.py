@@ -60,3 +60,11 @@ def test_broken_file_raises_docx_error(tmp_path):
 def test_missing_file_raises_docx_error(tmp_path):
     with pytest.raises(model.DocxError):
         model.load(tmp_path / "нет.docx")
+
+
+def test_load_does_not_create_headers(tmp_path):
+    path = make_docx(tmp_path / "а.docx", body=["Тело"])
+    doc = model.load(path)
+    assert doc.texts() == ["Тело"]
+    assert doc.document.sections[0].header.is_linked_to_previous is True
+    assert doc.document.sections[0].footer.is_linked_to_previous is True

@@ -45,3 +45,12 @@ GitHub → репозиторий `aslantuk-bit/corrector` → «Releases» → 
 - Шум правил по выборке корпуса: `docs/corpus-report.md` (`tools/corpus_sample.py`, `tools/corpus_run.py`);
   лексиконы и имена из корпуса: `tools/build_lexicon.py --lang ru|kk` (только Mac, нужен `~/court-analytics/corpus.db`).
 - Отключённые правила LanguageTool с обоснованием: `data/lt/lt_disabled_rules.txt`.
+
+## Сборка Корректора для Windows (этап 7)
+
+Сборщик GitHub собирает две программы: «Проверка_запуска» и «Корректор» (окно `Корректор.exe` и командная строка
+`Корректор-cli.exe` в одной папке с `java/`, `languagetool/`, `data/`, `словарь.txt`, `правила.yaml`, `ИНСТРУКЦИЯ.txt`).
+Архив `korrektor-<версия>-win64.zip` лежит в артефактах запуска и в релизе по тэгу `v*`. На сборщике собранная
+командная строка проверяет `tests/samples/образец.docx` вместе с LanguageTool — это сквозная проверка поставки.
+Локально на Mac: `pyinstaller --noconfirm sborka/corrector.spec && python sborka/assemble.py corrector --jre jre-mac-aarch64`.
+Лист приёмки на рабочем ПК: `docs/acceptance-stage7.md`.

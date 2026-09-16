@@ -91,11 +91,14 @@ def load(path: Path) -> DocumentModel:
                         walk(cell, "table")
 
     walk(document, "body")
-    for section in document.sections:  # пустые колонтитулы есть в каждом документе — пропускаем
-        for paragraph in section.header.paragraphs:
-            if paragraph.text.strip():
-                add(paragraph, "header")
-        for paragraph in section.footer.paragraphs:
-            if paragraph.text.strip():
-                add(paragraph, "footer")
+    for section in document.sections:
+        # колонтитул без собственного определения читать нельзя: python-docx создал бы его и изменил документ
+        if not section.header.is_linked_to_previous:
+            for paragraph in section.header.paragraphs:
+                if paragraph.text.strip():
+                    add(paragraph, "header")
+        if not section.footer.is_linked_to_previous:
+            for paragraph in section.footer.paragraphs:
+                if paragraph.text.strip():
+                    add(paragraph, "footer")
     return DocumentModel(path, document, paragraphs)
