@@ -56,3 +56,15 @@ def test_cli_reports_bad_user_rule(tmp_path, capsys, monkeypatch):
     path = make_docx(tmp_path / "акт.docx", body=["Текст."])
     assert cli.main(["--check", str(path), "--no-lt"]) == 0
     assert "правило 1 (плохое)" in capsys.readouterr().err
+
+
+def test_output_survives_ascii_console(tmp_path, monkeypatch):
+    """В консоли Windows с кодовой страницей cp1252 печать русского текста не должна ронять программу."""
+    import io
+    import sys
+    stream = io.TextIOWrapper(io.BytesIO(), encoding="ascii", errors="strict")
+    monkeypatch.setattr(sys, "stdout", stream)
+    path = make_docx(tmp_path / "акт.docx", body=["Соттын шешімі заңды."])
+    assert cli.main(["--check", str(path), "--no-lt"]) == 0
+    stream.flush()
+    assert "1" in stream.buffer.getvalue().decode("utf-8", errors="replace")

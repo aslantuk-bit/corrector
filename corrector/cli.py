@@ -65,7 +65,18 @@ def collect_files(target: Path) -> list[Path]:
     return [target]
 
 
+def utf8_console() -> None:
+    """Консоль Windows по умолчанию в cp1252/cp866: печатаем UTF-8, непечатаемое заменяем, не падаем."""
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    utf8_console()
     parser = argparse.ArgumentParser(prog="corrector", description="Проверка документов Word на русском и казахском")
     parser.add_argument("--check", type=Path, required=True, help="файл .docx или папка")
     parser.add_argument("--out", type=Path, help="папка для отчётов (по умолчанию рядом с файлом)")
