@@ -72,7 +72,7 @@ jobs:
           if (-not (Select-String -Path $report -Pattern "lt — работает" -Quiet)) { throw "LanguageTool не заработал в сборке" }
           if (-not (Select-String -Path $report -Pattern "ходатайтсво" -Quiet)) { throw "в отчёте нет ожидаемой ошибки" }
 
-      - name: Корректор (окно без экрана: открыть, проверить, сохранить)
+      - name: "Корректор (окно без экрана: открыть, проверить, сохранить)"
         shell: pwsh
         run: |
           $exe = (Resolve-Path "dist/bundle/Корректор/Корректор.exe").Path
