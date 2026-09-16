@@ -72,6 +72,17 @@ jobs:
           if (-not (Select-String -Path $report -Pattern "lt — работает" -Quiet)) { throw "LanguageTool не заработал в сборке" }
           if (-not (Select-String -Path $report -Pattern "ходатайтсво" -Quiet)) { throw "в отчёте нет ожидаемой ошибки" }
 
+      - name: Корректор (окно без экрана: открыть, проверить, сохранить)
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path "dist/bundle/Корректор/Корректор.exe").Path
+          $out = Join-Path $env:RUNNER_TEMP "gui"
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $p = Start-Process -FilePath $exe -ArgumentList @("--self-test", (Resolve-Path "tests/samples/образец.docx").Path, "--out", $out) -Wait -PassThru
+          if (Test-Path (Join-Path $out "самопроверка.txt")) { Get-Content (Join-Path $out "самопроверка.txt") }
+          if ($p.ExitCode -ne 0) { throw "окно завершилось с кодом $($p.ExitCode)" }
+          if (-not (Test-Path (Join-Path $out "образец_проверено.docx"))) { throw "окно не сохранило копию" }
+
       - uses: actions/upload-artifact@v7
         with:
           name: sborki-win64

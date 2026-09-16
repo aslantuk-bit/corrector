@@ -9,16 +9,16 @@ root = Path(SPECPATH).parent
 import docx as _docx
 
 docx_templates = Path(_docx.__file__).parent / "templates"
+# python-docx ищет шаблоны как docx/parts/../templates: папка docx/parts должна существовать на диске,
+# иначе «..» не разрешается (модули лежат в архиве, а не в папках)
 datas = (collect_data_files("pymorphy3_dicts_ru") + collect_data_files("pymorphy3")
-         + [(str(docx_templates), "docx/templates")])
+         + [(str(docx_templates), "docx/templates"), (str(docx_templates.parent / "parts" / "__init__.py"), "docx/parts")])
 hidden = collect_submodules("pymorphy3") + collect_submodules("kazsearch") + collect_submodules("spylls") + ["yaml"]
 
 app = Analysis([str(root / "sborka" / "entry_corrector.py")], pathex=[str(root)], datas=datas, hiddenimports=hidden,
                excludes=["tkinter", "unittest", "pydoc", "pytest"], noarchive=False)
 cli = Analysis([str(root / "sborka" / "entry_corrector_cli.py")], pathex=[str(root)], datas=datas, hiddenimports=hidden,
                excludes=["tkinter", "unittest", "pydoc", "pytest"], noarchive=False)
-MERGE((app, "Корректор", "Корректор"), (cli, "Корректор-cli", "Корректор-cli"))
-
 app_pyz = PYZ(app.pure)
 app_exe = EXE(app_pyz, app.scripts, [], exclude_binaries=True, name="Корректор", debug=False, strip=False, upx=False, console=False)
 cli_pyz = PYZ(cli.pure)

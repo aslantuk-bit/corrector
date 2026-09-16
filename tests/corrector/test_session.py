@@ -87,3 +87,9 @@ def test_save_with_comments_keeps_original(tmp_path, engines):
     comments = list(saved.comments)
     assert len(comments) == len(session.visible_items()) >= 2
     assert comments[0].author == "Корректор" and "Типографика" in comments[0].text
+
+
+def test_save_to_out_dir(tmp_path, engines):
+    session = make_session(tmp_path, engines, ["Соттын шешімі."])
+    target = session.save(with_comments=False, out_dir=tmp_path / "куда")
+    assert target == tmp_path / "куда" / "акт_проверено.docx" and target.exists()

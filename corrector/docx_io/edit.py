@@ -81,12 +81,13 @@ def add_comment(model: DocumentModel, para: Para, start: int, end: int, text: st
     return True
 
 
-def output_path(original: Path) -> Path:
+def output_path(original: Path, out_dir: Path | None = None) -> Path:
     original = Path(original)
-    candidate = original.with_name(f"{original.stem}{SUFFIX}{original.suffix}")
+    folder = Path(out_dir) if out_dir is not None else original.parent
+    candidate = folder / f"{original.stem}{SUFFIX}{original.suffix}"
     number = 2
     while candidate.exists():
-        candidate = original.with_name(f"{original.stem}{SUFFIX} ({number}){original.suffix}")
+        candidate = folder / f"{original.stem}{SUFFIX} ({number}){original.suffix}"
         number += 1
     return candidate
 

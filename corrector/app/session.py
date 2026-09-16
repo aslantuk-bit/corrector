@@ -122,12 +122,14 @@ class Session:
         self.settings.save(self.user_dir / SETTINGS_FILE)
 
     # --- сохранение ---
-    def save(self, with_comments: bool) -> Path:
+    def save(self, with_comments: bool, out_dir: Path | None = None) -> Path:
         assert self.model is not None and self.path is not None
         if with_comments:
             for item in self.visible_items():
                 para = self.model.paragraphs[item.issue.paragraph]
                 edit.add_comment(self.model, para, item.issue.start, item.issue.end, comment_text(item.issue))
-        target = edit.save_copy(self.model, edit.output_path(self.path))
+        if out_dir is not None:
+            Path(out_dir).mkdir(parents=True, exist_ok=True)
+        target = edit.save_copy(self.model, edit.output_path(self.path, out_dir))
         self.saved_path = target
         return target
