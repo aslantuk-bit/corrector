@@ -3,6 +3,8 @@ name = "corrector"
 version = "0.4.0"
 description = "Корректор: проверка орфографии, пунктуации и стиля юридических текстов (ru/kk) с флешки"
 requires-python = ">=3.13,<3.14"
+license = "MIT"
+authors = [{ name = "TAS" }]
 dependencies = ["PySide6-Essentials==6.11.2"]
 
 [tool.pytest.ini_options]

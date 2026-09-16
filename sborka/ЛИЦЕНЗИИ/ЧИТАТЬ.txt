@@ -7,4 +7,4 @@
 - Лексикон стеммера kazsearch (data/kk/kaz_stems.*) — LGPL-3.0, https://github.com/iDynbek/kazsearch-py.
 - Библиотеки Python: PySide6 (LGPL-3.0), python-docx (MIT), spylls (MPL-2.0), pymorphy3 и словари (MIT), PyYAML (MIT).
 
-Код самого Корректора — собственная разработка. Программа распространяется внутри организации.
+Код самого Корректора — TAS, лицензия MIT (файл LICENSE в репозитории https://github.com/aslantuk-bit/corrector).
