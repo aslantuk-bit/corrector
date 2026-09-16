@@ -32,11 +32,11 @@ def comment_text(issue: Issue) -> str:
 
 
 class Session:
-    def __init__(self, engines: Engines, user_dir: Path) -> None:
+    def __init__(self, engines: Engines, user_dir: Path, user_dict: UserDictionary | None = None) -> None:
         self.engines = engines
         self.user_dir = Path(user_dir)
         self.settings = Settings.load(self.user_dir / SETTINGS_FILE)
-        self.user_dict = UserDictionary(self.user_dir / DICT_FILE)
+        self.user_dict = user_dict or UserDictionary(self.user_dir / DICT_FILE)
         self.model: docx_model.DocumentModel | None = None
         self.path: Path | None = None
         self.items: list[IssueState] = []

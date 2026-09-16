@@ -121,3 +121,35 @@ def test_mixed_paragraph_has_no_foreign_hints_and_checks_both_dictionaries(tmp_p
     assert fake.seen == []
     assert [doc.paragraphs[0].text[i.start:i.end] for i in issues if i.category is Category.SPELLING] == ["колегия"]
     assert not [i for i in issues if i.rule_id.endswith(":foreign")]
+
+
+class FakeLt:
+    """LanguageTool-подобный движок: помечает орфографией каждое слово с заглавной буквы и слово «ходатайтсво»."""
+
+    name = "lt"
+
+    def check(self, paragraphs):
+        from corrector.core.text import words
+        result = []
+        for index, text in paragraphs:
+            for token in words(text):
+                if token.text[0].isupper() or token.text == "ходатайтсво":
+                    result.append(Issue(index, token.start, token.end, Category.SPELLING, Level.ERROR, "MORFOLOGIK_RULE_RU_RU", "lt", "Возможно найдена орфографическая ошибка.", ["вариант"]))
+        return result
+
+    def status(self):
+        return EngineStatus(self.name, True)
+
+
+def test_lt_spelling_filtered_by_lexicon_names_and_name_policy(tmp_path):
+    body = ["Истец Турматова подала ходатайтсво в акимат Кызылординской области.", "Представитель Турматова явился. Кызылординской."]
+    doc = model.load(make_docx(tmp_path / "а.docx", body=body))
+    engines = build(tmp_path, FakeLt())
+    try:
+        issues = pipeline.check_document(doc, engines, UserDictionary(tmp_path / "словарь.txt"), Settings())
+    finally:
+        engines.close()
+    spelling = [(doc.paragraphs[i.paragraph].text[i.start:i.end], i.level) for i in issues if i.category is Category.SPELLING]
+    # «акимат» — в лексиконе, «Кызылординской» — в списке имён, «Турматова» — дважды: всё это не ошибки;
+    # «Истец» и «Представитель» — известны словарю; остаётся настоящая опечатка
+    assert spelling == [("ходатайтсво", Level.ERROR)]

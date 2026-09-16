@@ -8,7 +8,7 @@ from corrector.core.issue import Category, Issue, Level
 from corrector.core.text import Token
 from corrector.rules.base import Rule, make_issue
 from corrector.rules.context import DocContext, ParaContext
-from corrector.rules.repeats import lemma
+from corrector.rules.repeats import NAME_GRAMMEMES, lemma
 
 KK_NAME_AFFIXES = sorted(["тің", "тың", "дің", "дың", "нің", "ның", "тан", "тен", "дан", "ден", "нан", "нен", "мен", "бен", "пен",
                           "ке", "ге", "қа", "ға", "та", "те", "да", "де", "ты", "ті", "ды", "ді", "на", "не", "сы", "сі", "ы", "і"],
@@ -37,7 +37,17 @@ def name_lemma(word: str, lang: str, doc: DocContext) -> str:
     stem = word.lower()
     if lang == "kk":
         stem = _strip(stem, KK_NAME_AFFIXES)
+        return _strip(stem, RU_NAME_ENDINGS)
+    parses = doc.resources.morph.parse(word)
+    if any(p.is_known for p in parses):
+        return lemma(word, lang, doc)  # известное слово: нормальная форма учитывает беглые гласные (Истец/Истца)
     return _strip(stem, RU_NAME_ENDINGS)
+
+
+def ru_common_word(word: str, doc: DocContext) -> bool:
+    """Известное морфологии нарицательное слово (Правительство, Батыр) — не кандидат в разнобой имён."""
+    parses = doc.resources.morph.parse(word)
+    return any(p.is_known and not any(g in p.tag for g in NAME_GRAMMEMES) for p in parses)
 
 
 def is_patronymic(word: str) -> bool:
@@ -72,7 +82,7 @@ class NamesConsistencyRule(Rule):
         lemmas: dict[str, str] = {}
         for para in doc.paragraphs:
             for token in para.words:
-                if _is_name(token, para):
+                if _is_name(token, para) and not (para.lang != "kk" and ru_common_word(token.text, doc)):
                     occurrences[token.text].append((para, token))
                     lemmas.setdefault(token.text, name_lemma(token.text, para.lang, doc))
         counts = Counter({form: len(items) for form, items in occurrences.items()})

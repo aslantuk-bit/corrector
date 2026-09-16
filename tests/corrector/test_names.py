@@ -23,3 +23,9 @@ def test_inflected_forms_are_not_variants(tmp_path):
     doc = model.load(make_docx(tmp_path / "д.docx", body=["Истец Ахметов подал иск. Представитель Ахметова тоже. Повестку Ахметову вручили."]))
     d = context.build_contexts(doc, ["ru"], Settings(), resources.load_resources(paths.data_dir(), tmp_path))
     assert NamesConsistencyRule().check_document(d) == []
+
+
+def test_common_words_and_fleeting_vowels_are_not_variants(tmp_path):
+    doc = model.load(make_docx(tmp_path / "д.docx", body=["Суд заслушал Истца. Заявление Правительство подало. Затем Истец возражал, а Правительства не было. Батыр и Батыс."]))
+    d = context.build_contexts(doc, ["ru"], Settings(), resources.load_resources(paths.data_dir(), tmp_path))
+    assert NamesConsistencyRule().check_document(d) == []

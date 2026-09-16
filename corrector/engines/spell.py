@@ -106,6 +106,10 @@ class SpellEngine:
                                 f"{self.name}:unknown", self.name, UNKNOWN_MESSAGE, variants))
         return issues
 
+    def accepts(self, word: str) -> bool:
+        """Слово не считается ошибкой: пропускаемое, известное словарю, лексикону, списку имён или словарю пользователя."""
+        return self._skip(word) or self._accepted(word)
+
     def _skip(self, word: str) -> bool:
         if len(word) < 2 or any(ch.isdigit() for ch in word):
             return True
