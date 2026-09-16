@@ -47,7 +47,7 @@ def test_broken_file_returns_two(tmp_path, capsys):
 def test_version(capsys):
     with pytest.raises(SystemExit):
         cli.main(["--version"])
-    assert "0.3.0" in capsys.readouterr().out
+    assert "0.3.1" in capsys.readouterr().out
 
 
 def test_cli_reports_bad_user_rule(tmp_path, capsys, monkeypatch):
