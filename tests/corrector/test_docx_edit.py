@@ -84,3 +84,20 @@ def test_output_path_and_original_untouched(tmp_path):
     saved = edit.save_copy(doc, edit.output_path(path))
     assert saved.name == "акт_проверено (2).docx" and saved.exists()
     assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+
+
+def test_comment_in_text_box_does_not_crash(tmp_path):
+    path = make_docx(tmp_path / "а.docx", body=["Основной текст"])
+    from docx.oxml import parse_xml
+    document = docx.Document(str(path))
+    run = document.paragraphs[0].add_run()
+    xml = ('<w:pict xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:v="urn:schemas-microsoft-com:vml">'
+           '<v:shape><v:textbox><w:txbxContent><w:p><w:r><w:t>Соттын шешімі</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict>')
+    run._r.append(parse_xml(xml))
+    document.save(str(path))
+    doc = reload(path)
+    box = [p for p in doc.paragraphs if p.where == "textbox"][0]
+    result = edit.add_comment(doc, box, 0, 6, "м")
+    assert result in (True, False)
+    edit.save_copy(doc, tmp_path / "б.docx")
+    assert docx.Document(str(tmp_path / "б.docx")).paragraphs[0].text == "Основной текст"

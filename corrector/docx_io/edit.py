@@ -77,7 +77,10 @@ def add_comment(model: DocumentModel, para: Para, start: int, end: int, text: st
     covered = [span.run for span in para.runs if start <= span.start and span.end <= end]
     if not covered:
         return False
-    model.document.add_comment(runs=[covered[0], covered[-1]], text=text, author=author, initials="К")
+    try:
+        model.document.add_comment(runs=[covered[0], covered[-1]], text=text, author=author, initials="К")
+    except Exception:  # noqa: BLE001 — примечание в надписи или необычной части Word: оставляем без примечания
+        return False
     return True
 
 

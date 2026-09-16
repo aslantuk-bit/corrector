@@ -14,6 +14,7 @@ from corrector.app.session import Session
 from corrector.app.window import MainWindow
 from corrector.app.worker import EnginesWorker
 from corrector.core import paths
+from corrector.core.issue import Level
 from corrector.core.log import setup_logging
 from corrector.core.userdict import FILE_NAME as DICT_FILE
 from corrector.core.userdict import UserDictionary
@@ -36,7 +37,8 @@ def run_self_test(app: QApplication, window: MainWindow, path: Path | None, out_
     def on_checked() -> None:
         try:
             target = window.save(with_comments=True) if out_dir is None else window.session.save(True, out_dir)
-            counts = window.counters.text()
+            counts = window.session.counts()
+            counts = f"ошибок {counts[Level.ERROR]}, предупреждений {counts[Level.WARNING]}, подсказок {counts[Level.HINT]}"
             finish(0, f"самопроверка: окно открылось, {counts}; {window.engines_label.text()}; копия: {target}")
         except Exception as error:  # noqa: BLE001
             finish(1, f"самопроверка: сохранение не удалось: {error}")

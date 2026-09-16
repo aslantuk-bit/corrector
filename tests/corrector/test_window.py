@@ -19,10 +19,10 @@ def engines(tmp_path_factory):
     engines.close()
 
 
-def make_window(qtbot, tmp_path, engines, body):
+def make_window(qtbot, tmp_path, engines, body, table=None):
     window = MainWindow(Session(engines, tmp_path), help_text="справка", interactive=False)
     qtbot.addWidget(window)
-    path = make_docx(tmp_path / "акт.docx", body=body)
+    path = make_docx(tmp_path / "акт.docx", body=body, table=table)
     with qtbot.waitSignal(window.check_finished, timeout=30000):
         window.load_path(path)
     return window
@@ -32,7 +32,7 @@ def test_window_loads_document_and_lists_issues(qtbot, tmp_path, engines):
     window = make_window(qtbot, tmp_path, engines, ["Соттын шешімі заңды.", "Истец подал ходатайтсво в суд ,  решил."])
     assert window.panel.list.count() >= 3
     assert "ходатайтсво" in window.view.toPlainText()
-    assert window.counters.text().startswith("Ошибок 2")
+    assert "ошибок 2" in window.counters.text()
     assert "недоступна" in window.engines_label.text()
     assert len(window.view.spans) == window.panel.list.count()
 
@@ -69,9 +69,25 @@ def test_save_with_comments(qtbot, tmp_path, engines):
 
 
 def test_screenshot(qtbot, tmp_path, engines):
-    window = make_window(qtbot, tmp_path, engines, ["Соттын шешімі заңды.", "Истец подал ходатайтсво в суд ,  решил. Действуя в соответствие с законом."])
-    window.resize(1200, 760)
+    window = make_window(qtbot, tmp_path, engines, ["РЕШЕНИЕ", "Специализированный межрайонный административный суд города Астана в составе судьи Ахметова А.Б. рассмотрел дело.", "Соттын шешімі заңды.", "Истец подал ходатайтсво в суд ,  решил. Действуя в соответствие с законом. Согласно приказа директора."], table=[["Истец", "ТОО «Ак жол»"], ["Ответчик", "Акимат города"]])
+    window.resize(1240, 800)
     window.show()
     qtbot.waitExposed(window)
     target = Path(os.environ.get("CORRECTOR_SCREENSHOT", tmp_path / "окно.png"))
     assert window.grab().save(str(target))
+
+
+def test_buttons_disabled_until_document_loaded(qtbot, tmp_path, engines):
+    window = MainWindow(Session(engines, tmp_path), help_text="справка", interactive=False)
+    qtbot.addWidget(window)
+    assert window.open_button.isEnabled() and not window.check_button.isEnabled() and not window.save_button.isEnabled()
+    path = make_docx(tmp_path / "акт.docx", body=["Текст."])
+    with qtbot.waitSignal(window.check_finished, timeout=30000):
+        window.load_path(path)
+    assert window.check_button.isEnabled() and window.save_comments_button.isEnabled()
+
+
+def test_help_contains_author_note():
+    from corrector.core import paths
+    text = (paths.data_dir() / "ИНСТРУКЦИЯ.txt").read_text(encoding="utf-8")
+    assert text.startswith("ОТ АВТОРА") and "TAS" in text and "Добавить в словарь" in text
