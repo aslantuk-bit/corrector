@@ -21,3 +21,14 @@ def test_missing_java_falls_back_with_note(tmp_path):
         assert any("Java" in note or "LanguageTool" in note for note in engines.notes)
     finally:
         engines.close()
+
+
+def test_lt_config_prefers_copy_inside_languagetool_dir(tmp_path):
+    data = tmp_path / "data" / "lt"
+    data.mkdir(parents=True)
+    (data / "lt.properties").write_text("a=1", encoding="utf-8")
+    lt_dir = tmp_path / "languagetool"
+    lt_dir.mkdir()
+    assert factory.lt_config_path(lt_dir, tmp_path / "data") == data / "lt.properties"
+    (lt_dir / "lt.properties").write_text("a=1", encoding="utf-8")
+    assert factory.lt_config_path(lt_dir, tmp_path / "data") == lt_dir / "lt.properties"

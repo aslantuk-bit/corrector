@@ -55,6 +55,12 @@ class Engines:
             self.server = None
 
 
+def lt_config_path(lt_dir: Path, data: Path) -> Path:
+    """Настройки сервера: копия внутри папки languagetool (переезжает вместе с ней в безопасный путь), иначе data/lt."""
+    inside = lt_dir / "lt.properties"
+    return inside if inside.exists() else data / "lt" / "lt.properties"
+
+
 def build_engines(
     user_dict: UserDictionary,
     no_lt: bool = False,
@@ -86,7 +92,7 @@ def build_engines(
     lt_dir, note = javaenv.safe_dir(lt_home, "languagetool", encoding)
     if note:
         engines.notes.append(f"LanguageTool: {note}")
-    server = LanguageToolServer(paths.java_exe(java_dir), lt_dir, data / "lt" / "lt.properties")
+    server = LanguageToolServer(paths.java_exe(java_dir), lt_dir, lt_config_path(lt_dir, data))
     try:
         server.start()
     except LTStartError as error:

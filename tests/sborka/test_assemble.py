@@ -73,3 +73,8 @@ def test_assemble_copies_extras(tmp_path):
 def test_apps_registry_has_corrector():
     app = asm.APPS["corrector"]
     assert app["folder"] == "Корректор" and app["zip"] == "korrektor" and app["instruction"].exists()
+
+
+def test_corrector_bundle_carries_lt_properties_inside_languagetool():
+    extras = dict((rel, src) for src, rel in asm.APPS["corrector"]["extras"])
+    assert extras["languagetool/lt.properties"].name == "lt.properties"

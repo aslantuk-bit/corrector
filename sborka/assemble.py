@@ -31,6 +31,8 @@ APPS = {
         "extras": [
             (ROOT / "data", "data"),
             (ROOT / "vendor" / "languagetool-ru", "languagetool"),
+            # настройки сервера внутри папки languagetool: Java не читает файлы по пути с символами вне кодовой страницы
+            (ROOT / "data" / "lt" / "lt.properties", "languagetool/lt.properties"),
             (ROOT / "sborka" / "правила.yaml", "правила.yaml"),
             (ROOT / "sborka" / "ЛИЦЕНЗИИ", "ЛИЦЕНЗИИ"),
         ],
