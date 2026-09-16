@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import docx
 import pytest
 
@@ -70,5 +73,5 @@ def test_screenshot(qtbot, tmp_path, engines):
     window.resize(1200, 760)
     window.show()
     qtbot.waitExposed(window)
-    assert window.grab().save(str(tmp_path / "окно.png"))
-    (tmp_path / "окно.png").replace("/tmp/корректор-окно.png")
+    target = Path(os.environ.get("CORRECTOR_SCREENSHOT", tmp_path / "окно.png"))
+    assert window.grab().save(str(target))
