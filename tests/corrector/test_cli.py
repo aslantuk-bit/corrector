@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from corrector import cli
+from corrector import __version__, cli
 from tests.corrector.conftest import make_docx
 
 
@@ -47,7 +47,7 @@ def test_broken_file_returns_two(tmp_path, capsys):
 def test_version(capsys):
     with pytest.raises(SystemExit):
         cli.main(["--version"])
-    assert "0.4.0" in capsys.readouterr().out
+    assert __version__ in capsys.readouterr().out
 
 
 def test_cli_reports_bad_user_rule(tmp_path, capsys, monkeypatch):
