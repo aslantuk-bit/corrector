@@ -93,7 +93,7 @@ class LanguageToolServer:
             raise LTStartError(f"нет LanguageTool: {jar}")
         self.port = _free_port()
         command = [str(self.java), f"-Xmx{self.xmx}", "-Djava.awt.headless=true", "-cp", str(jar),
-                   "org.languagetool.server.HTTPServer", "--port", str(self.port), "--allow-origin"]
+                   "org.languagetool.server.HTTPServer", "--port", str(self.port)]
         if self.config is not None:
             command += ["--config", str(self.config)]
         extra = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
